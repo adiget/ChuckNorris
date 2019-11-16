@@ -5,10 +5,6 @@ import retrofit2.http.GET
 import retrofit2.http.Path
 
 interface ApiService {
-//    @GET("/jokes/random/3")
-//    suspend fun getQuotes(): List<Quote>
-
-
     @GET("/jokes/random/")
     suspend fun getRandomJoke(): ApiResponse<Joke>
 

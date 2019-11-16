@@ -1,13 +1,14 @@
 package com.annada.android.sample.chucknorris.ui.main
 
+import android.util.Log
 import android.view.View
+import androidx.databinding.ObservableField
 import androidx.lifecycle.MutableLiveData
 import com.annada.android.sample.chucknorris.R
 import com.annada.android.sample.chucknorris.api.ApiService
 import com.annada.android.sample.chucknorris.base.BaseViewModel
 import com.annada.android.sample.chucknorris.model.daos.JokeDao
 import com.annada.android.sample.chucknorris.model.entities.Joke
-import io.reactivex.disposables.Disposable
 import kotlinx.coroutines.*
 import javax.inject.Inject
 
@@ -20,18 +21,27 @@ class QuoteListViewModel(private val jokeDao: JokeDao) : BaseViewModel() {
     val errorMessage: MutableLiveData<Int> = MutableLiveData()
     val errorClickListener = View.OnClickListener { loadData() }
 
-    private lateinit var subscription: Disposable
-
     private val viewModelJob = Job()
     private val errorHandler = CoroutineExceptionHandler { _, error ->
+        onRetrieveQuoteListFinish()
         when (error) {
             is Exception -> onRetrieveQuoteListError()
         }
     }
+
+    var isRefreshing = ObservableField(false)
+
+    private var totalJokes: Int? = 0
     private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob + errorHandler)
     private val bgDispatcher = Dispatchers.IO
 
     init {
+        GlobalScope.launch(bgDispatcher) {
+            totalJokes = getTotalNumberOfJokes()
+
+            Log.d(TAG, "Total Number of Jokes:- " + totalJokes)
+        }
+
         loadData()
     }
 
@@ -54,9 +64,38 @@ class QuoteListViewModel(private val jokeDao: JokeDao) : BaseViewModel() {
         }
     }
 
+    fun loadMore() {
+        if (isRefreshing.get() == true) {
+            return
+        }
+
+        if (getItemCount() == totalJokes) {
+            onRetrieveJokesNoMoreError()
+            return
+        }
+
+        isRefreshing.set(true)
+
+        onRetrieveQuoteListStart()
+
+        uiScope.launch {
+
+            var quoteList = api.getRandomJokes((RAMDOM_MIN..RANDOM_MAX).random()).value
+
+            quoteList?.let { insertAll(it) }
+
+            quoteList = getDbJokes()
+
+            quoteList?.let { onRetrieveQuoteListSuccess(it) }
+
+            onRetrieveQuoteListFinish()
+
+            isRefreshing.set(false)
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
-        subscription.dispose()
 
         viewModelJob.cancel()
     }
@@ -74,8 +113,16 @@ class QuoteListViewModel(private val jokeDao: JokeDao) : BaseViewModel() {
         quoteListAdapter.updateQuoteList(quoteList)
     }
 
+    fun getItemCount(): Int {
+        return quoteListAdapter.itemCount
+    }
+
     private fun onRetrieveQuoteListError() {
         errorMessage.value = R.string.quote_error
+    }
+
+    private fun onRetrieveJokesNoMoreError() {
+        errorMessage.value = R.string.no_more_error
     }
 
     private suspend fun getDbJokes(): List<Joke>? {
@@ -90,7 +137,14 @@ class QuoteListViewModel(private val jokeDao: JokeDao) : BaseViewModel() {
         }
     }
 
-    companion object{
+    private suspend fun getTotalNumberOfJokes(): Int? {
+        val apiResponse = api.getJokesCount()
+
+        return apiResponse.value
+    }
+
+    companion object {
+        private val TAG = QuoteListViewModel::class.java.simpleName
         val RAMDOM_MIN = 8
         val RANDOM_MAX = 21
     }

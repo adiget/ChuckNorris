@@ -10,7 +10,7 @@ Display list of quotes
 
 4.Dagger2 for dependency injection
 
-5.Unit Test: JUnit
+5.Unit Test: JUnit, mockito
 
 6.Architecture Components: MVVM, room, liveData
 
