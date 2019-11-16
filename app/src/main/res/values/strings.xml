@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">ChuckNorris</string>
+    <string name="quote_error">An error occurred while loading the quotes</string>
+    <string name="retry">Retry</string>
+</resources>
