@@ -16,4 +16,7 @@ interface ApiService {
 
     @GET("/jokes/{id}")
     suspend fun getJoke(@Path("id") id: Int): ApiResponse<Joke>
+
+    @GET("/jokes/random?exclude=[explicit]")
+    suspend fun getRandomJokesExcludeCategory(): ApiResponse<Joke>
 }

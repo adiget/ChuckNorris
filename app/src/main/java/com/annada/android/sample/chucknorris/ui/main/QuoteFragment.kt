@@ -1,11 +1,10 @@
 package com.annada.android.sample.chucknorris.ui.main
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -16,6 +15,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.annada.android.sample.chucknorris.R
 import com.annada.android.sample.chucknorris.databinding.QuoteFragmentBinding
 import com.google.android.material.snackbar.Snackbar
+
+
 
 class QuoteFragment : Fragment() {
 
@@ -34,6 +35,8 @@ class QuoteFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+
+        setHasOptionsMenu(true)
 
         viewModel = ViewModelProviders.of(this, ViewModelFactory(activity as AppCompatActivity))
             .get(QuoteListViewModel::class.java)
@@ -66,7 +69,7 @@ class QuoteFragment : Fragment() {
                 val childCount: Int = viewModel.getItemCount()
                 val lastItem: Int = layoutManager.findLastVisibleItemPosition()
 
-                if (dy > 0 && previousChildCount != childCount && childCount - lastItem < 5) {
+                if (dy > 0 && previousChildCount != childCount && childCount - lastItem < 1) {
                     viewModel.loadMore()
                     previousChildCount = childCount
                 }
@@ -77,6 +80,45 @@ class QuoteFragment : Fragment() {
 
 
         return binding.root
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        menuInflater.inflate(R.menu.menu_main, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        return when (item.itemId) {
+            R.id.action_search -> {
+                val searchView = item.actionView as SearchView
+                searchView.queryHint = "No explicit"
+                searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+
+                    override fun onQueryTextChange(newText: String): Boolean {
+                        return false
+                    }
+
+                    override fun onQueryTextSubmit(query: String): Boolean {
+                        // task HERE
+                        viewModel.filterNoExplicitCategory()
+
+                        return false
+                    }
+
+                })
+
+                searchView.setOnCloseListener {
+                    viewModel.loadMore()
+                    false
+                }
+
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     private fun showError(@StringRes errorMessage: Int) {

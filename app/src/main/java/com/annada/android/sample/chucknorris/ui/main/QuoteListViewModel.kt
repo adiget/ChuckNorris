@@ -137,10 +137,45 @@ class QuoteListViewModel(private val jokeDao: JokeDao) : BaseViewModel() {
         }
     }
 
+    private suspend fun insert(joke: Joke) {
+        return withContext(bgDispatcher) {
+            jokeDao.insert(joke)
+        }
+    }
+
+    private suspend fun deleteAll(){
+        return withContext(bgDispatcher){
+            jokeDao.deleteAll()
+        }
+    }
+
     private suspend fun getTotalNumberOfJokes(): Int? {
         val apiResponse = api.getJokesCount()
 
         return apiResponse.value
+    }
+
+    fun filterNoExplicitCategory(){
+
+        onRetrieveQuoteListStart()
+
+        uiScope.launch {
+
+            val noExplicitJoke = api.getRandomJokesExcludeCategory().value
+
+            noExplicitJoke?.let {
+                deleteAll()
+                insert(it)
+
+                val quoteList = getDbJokes()
+
+                quoteList?.let { onRetrieveQuoteListSuccess(it) }
+            }
+
+            onRetrieveQuoteListFinish()
+
+        }
+
     }
 
     companion object {
