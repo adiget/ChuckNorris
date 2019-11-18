@@ -15,7 +15,7 @@ interface JokeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(joke: Joke)
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAll(vararg joke: Joke)
 
     @Query("DELETE from joke")

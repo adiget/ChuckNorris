@@ -17,7 +17,6 @@ import com.annada.android.sample.chucknorris.databinding.QuoteFragmentBinding
 import com.google.android.material.snackbar.Snackbar
 
 
-
 class QuoteFragment : Fragment() {
 
     companion object {
@@ -69,7 +68,7 @@ class QuoteFragment : Fragment() {
                 val childCount: Int = viewModel.getItemCount()
                 val lastItem: Int = layoutManager.findLastVisibleItemPosition()
 
-                if (dy > 0 && previousChildCount != childCount && childCount - lastItem < 1) {
+                if (dy > 0 && previousChildCount != childCount && childCount - lastItem < 3) {
                     viewModel.loadMore()
                     previousChildCount = childCount
                 }
@@ -95,6 +94,18 @@ class QuoteFragment : Fragment() {
             R.id.action_search -> {
                 val searchView = item.actionView as SearchView
                 searchView.queryHint = "No explicit"
+
+                item.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
+                    override fun onMenuItemActionExpand(menuItem: MenuItem?): Boolean {
+                        return true
+                    }
+
+                    override fun onMenuItemActionCollapse(menuItem: MenuItem?): Boolean {
+                        viewModel.loadMore()
+                        return true
+                    }
+                })
+
                 searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
 
                     override fun onQueryTextChange(newText: String): Boolean {
@@ -107,13 +118,7 @@ class QuoteFragment : Fragment() {
 
                         return false
                     }
-
                 })
-
-                searchView.setOnCloseListener {
-                    viewModel.loadMore()
-                    false
-                }
 
                 true
             }

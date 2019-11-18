@@ -10,6 +10,7 @@ import com.annada.android.sample.chucknorris.base.BaseViewModel
 import com.annada.android.sample.chucknorris.model.daos.JokeDao
 import com.annada.android.sample.chucknorris.model.entities.Joke
 import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers.Main
 import javax.inject.Inject
 
 class QuoteListViewModel(private val jokeDao: JokeDao) : BaseViewModel() {
@@ -46,9 +47,11 @@ class QuoteListViewModel(private val jokeDao: JokeDao) : BaseViewModel() {
     }
 
     private fun loadData() {
-        onRetrieveQuoteListStart()
+
 
         uiScope.launch {
+            onRetrieveQuoteListStart()
+
             var quoteList = getDbJokes()
 
             if (quoteList?.isNotEmpty() == false) {
@@ -65,20 +68,22 @@ class QuoteListViewModel(private val jokeDao: JokeDao) : BaseViewModel() {
     }
 
     fun loadMore() {
-        if (isRefreshing.get() == true) {
-            return
-        }
-
-        if (getItemCount() == totalJokes) {
-            onRetrieveJokesNoMoreError()
-            return
-        }
-
-        isRefreshing.set(true)
-
-        onRetrieveQuoteListStart()
 
         uiScope.launch {
+
+            if (isRefreshing.get() == true) {
+                return@launch
+            }
+
+            if (getItemCount() == totalJokes) {
+                onRetrieveJokesNoMoreError()
+                return@launch
+            }
+
+            isRefreshing.set(true)
+
+
+            onRetrieveQuoteListStart()
 
             var quoteList = api.getRandomJokes((RAMDOM_MIN..RANDOM_MAX).random()).value
 
@@ -100,9 +105,11 @@ class QuoteListViewModel(private val jokeDao: JokeDao) : BaseViewModel() {
         viewModelJob.cancel()
     }
 
-    private fun onRetrieveQuoteListStart() {
-        loadingVisibility.value = View.VISIBLE
-        errorMessage.value = null
+    private suspend fun onRetrieveQuoteListStart() {
+        withContext(Main) {
+            loadingVisibility.value = View.VISIBLE
+            errorMessage.value = null
+        }
     }
 
     private fun onRetrieveQuoteListFinish() {
@@ -143,8 +150,8 @@ class QuoteListViewModel(private val jokeDao: JokeDao) : BaseViewModel() {
         }
     }
 
-    private suspend fun deleteAll(){
-        return withContext(bgDispatcher){
+    private suspend fun deleteAll() {
+        return withContext(bgDispatcher) {
             jokeDao.deleteAll()
         }
     }
@@ -155,11 +162,12 @@ class QuoteListViewModel(private val jokeDao: JokeDao) : BaseViewModel() {
         return apiResponse.value
     }
 
-    fun filterNoExplicitCategory(){
+    fun filterNoExplicitCategory() {
 
-        onRetrieveQuoteListStart()
 
         uiScope.launch {
+
+            onRetrieveQuoteListStart()
 
             val noExplicitJoke = api.getRandomJokesExcludeCategory().value
 
